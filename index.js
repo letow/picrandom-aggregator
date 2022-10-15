@@ -93,6 +93,14 @@ fs.readFile(path.join(__dirname, "logdata"), "utf-8", async (err, data) => {
         random_id: easyvk.randomId(),
       });
 
+      let savepic = await vk.call("photos.get", {
+        owner_id: -136259311,
+        album_id: "wall",
+        rev: 1,
+        count: 10, //12000,
+        random_id: easyvk.randomId(),
+      });
+
       let aisaves = await vk.call("photos.get", {
         owner_id: 194577863,
         album_id: "saved",
@@ -161,6 +169,18 @@ fs.readFile(path.join(__dirname, "logdata"), "utf-8", async (err, data) => {
         }); */
       });
 
+      savepic.items.forEach((element) => {
+        fs.appendFile(
+          picsPath,
+          element.sizes[element.sizes.length - 1].url + "\n",
+          () => {}
+        );
+        /* pic.push({
+          type: "photo",
+          media: element.sizes[element.sizes.length - 1].url,
+        }); */
+      });
+
       aisaves.items.forEach((element) => {
         fs.appendFile(
           picsPath,
@@ -177,12 +197,32 @@ fs.readFile(path.join(__dirname, "logdata"), "utf-8", async (err, data) => {
         pics.forEach((pic) => pic.then((data) => picsToSend.push(data)));
       });
 
-      bot.on("message", (msg) => {
-        const chatId = msg.chat.id;
-        if (msg.text === "s") {
-          console.log(chatId);
-          bot.sendMessage(chatId, "Sending...");
-          bot.sendMediaGroup(chatId, picsToSend);
+      let options = {
+        reply_markup: JSON.stringify({
+          inline_keyboard: [
+            [{ text: "Yes", callback_data: "1" }],
+            [{ text: "No", callback_data: "0" }],
+          ],
+        }),
+      };
+
+      bot.on("message", async (msg) => {
+        const ownerChatId = msg.chat.id;
+        picsToSend[0]["caption"] = "@ACUMPOT";
+        if (msg.text === "s" && msg.chat.id === Number(logdata[3])) {
+          console.log(ownerChatId);
+          bot.sendMessage(ownerChatId, "Sending...");
+          await bot.sendMediaGroup(ownerChatId, picsToSend);
+          bot.sendMessage(ownerChatId, "Approved?", options);
+          bot.on("callback_query", (callbackQuery) => {
+            const action = callbackQuery.data;
+            if (action === "0") {
+              bot.sendMessage(ownerChatId, "You disliked cumpilation");
+            } else {
+              const channelChatId = -1001880050276;
+              bot.sendMessage(channelChatId, "You liked cumpilation");
+            }
+          });
         }
       });
     });

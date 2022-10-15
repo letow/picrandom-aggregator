@@ -44,6 +44,13 @@ fs.readFile(path.join(__dirname, "logdata"), "utf-8", async (err, data) => {
       return pics;
     };
 
+    const createPicsToSend = async () => {
+      await createPics().then((pics) => {
+        pics.forEach((pic) => pic.then((data) => picsToSend.push(data)));
+      });
+      return picsToSend;
+    };
+
     if (!fs.existsSync(picsPath)) {
       fs.writeFile(picsPath, "", () => {});
     }
@@ -53,6 +60,7 @@ fs.readFile(path.join(__dirname, "logdata"), "utf-8", async (err, data) => {
       password: logdata[1],
       sessionFile: path.join(__dirname, ".my-session"),
     }).then(async (vk) => {
+      /*
       let anacontent = await vk.call("photos.get", {
         owner_id: -198071571,
         album_id: "wall",
@@ -115,10 +123,10 @@ fs.readFile(path.join(__dirname, "logdata"), "utf-8", async (err, data) => {
           element.sizes[element.sizes.length - 1].url + "\n",
           () => {}
         );
-        /* pic.push({
-          type: "photo",
-          media: element.sizes[element.sizes.length - 1].url,
-        }); */
+        // pic.push({
+        //   type: "photo",
+        //   media: element.sizes[element.sizes.length - 1].url,
+        // });
       });
 
       godnotent.items.forEach((element) => {
@@ -127,10 +135,10 @@ fs.readFile(path.join(__dirname, "logdata"), "utf-8", async (err, data) => {
           element.sizes[element.sizes.length - 1].url + "\n",
           () => {}
         );
-        /* pic.push({
-          type: "photo",
-          media: element.sizes[element.sizes.length - 1].url,
-        }); */
+        // pic.push({
+        //   type: "photo",
+        //   media: element.sizes[element.sizes.length - 1].url,
+        // });
       });
 
       justpic.items.forEach((element) => {
@@ -139,10 +147,10 @@ fs.readFile(path.join(__dirname, "logdata"), "utf-8", async (err, data) => {
           element.sizes[element.sizes.length - 1].url + "\n",
           () => {}
         );
-        /* pic.push({
-          type: "photo",
-          media: element.sizes[element.sizes.length - 1].url,
-        }); */
+        // pic.push({
+        //   type: "photo",
+        //   media: element.sizes[element.sizes.length - 1].url,
+        // });
       });
 
       trash50.items.forEach((element) => {
@@ -151,10 +159,10 @@ fs.readFile(path.join(__dirname, "logdata"), "utf-8", async (err, data) => {
           element.sizes[element.sizes.length - 1].url + "\n",
           () => {}
         );
-        /* pic.push({
-          type: "photo",
-          media: element.sizes[element.sizes.length - 1].url,
-        }); */
+        // pic.push({
+        //   type: "photo",
+        //   media: element.sizes[element.sizes.length - 1].url,
+        // });
       });
 
       cursed.items.forEach((element) => {
@@ -163,10 +171,10 @@ fs.readFile(path.join(__dirname, "logdata"), "utf-8", async (err, data) => {
           element.sizes[element.sizes.length - 1].url + "\n",
           () => {}
         );
-        /* pic.push({
-          type: "photo",
-          media: element.sizes[element.sizes.length - 1].url,
-        }); */
+        // pic.push({
+        //   type: "photo",
+        //   media: element.sizes[element.sizes.length - 1].url,
+        // });
       });
 
       savepic.items.forEach((element) => {
@@ -175,10 +183,10 @@ fs.readFile(path.join(__dirname, "logdata"), "utf-8", async (err, data) => {
           element.sizes[element.sizes.length - 1].url + "\n",
           () => {}
         );
-        /* pic.push({
-          type: "photo",
-          media: element.sizes[element.sizes.length - 1].url,
-        }); */
+        // pic.push({
+        //   type: "photo",
+        //   media: element.sizes[element.sizes.length - 1].url,
+        // });
       });
 
       aisaves.items.forEach((element) => {
@@ -187,40 +195,46 @@ fs.readFile(path.join(__dirname, "logdata"), "utf-8", async (err, data) => {
           element.sizes[element.sizes.length - 1].url + "\n",
           () => {}
         );
-        /* pic.push({
-          type: "photo",
-          media: element.sizes[element.sizes.length - 1].url,
-        }); */
+        // pic.push({
+        //   type: "photo",
+        //   media: element.sizes[element.sizes.length - 1].url,
+        // });
       });
+      */
 
-      await createPics().then((pics) => {
-        pics.forEach((pic) => pic.then((data) => picsToSend.push(data)));
-      });
+      await createPicsToSend();
 
-      let options = {
+      const options = {
         reply_markup: JSON.stringify({
           inline_keyboard: [
-            [{ text: "Yes", callback_data: "1" }],
-            [{ text: "No", callback_data: "0" }],
+            [
+              { text: "\u2705Yes", callback_data: "yes" },
+              { text: "\ud83d\udeabNo", callback_data: "no" },
+            ],
           ],
         }),
       };
 
+      const suggest = async (ownerChatId) => {
+        bot.sendMessage(ownerChatId, "Sending...");
+        await bot.sendMediaGroup(ownerChatId, await createPicsToSend());
+        bot.sendMessage(ownerChatId, "Approved?", options);
+      };
+
       bot.on("message", async (msg) => {
         const ownerChatId = msg.chat.id;
-        picsToSend[0]["caption"] = "@ACUMPOT";
         if (msg.text === "s" && msg.chat.id === Number(logdata[3])) {
-          console.log(ownerChatId);
-          bot.sendMessage(ownerChatId, "Sending...");
-          await bot.sendMediaGroup(ownerChatId, picsToSend);
-          bot.sendMessage(ownerChatId, "Approved?", options);
-          bot.on("callback_query", (callbackQuery) => {
+          suggest(ownerChatId);
+          bot.on("callback_query", async (callbackQuery) => {
             const action = callbackQuery.data;
-            if (action === "0") {
-              bot.sendMessage(ownerChatId, "You disliked cumpilation");
+            if (action === "no") {
+              picsToSend.length = 0;
+              await createPicsToSend();
+              await suggest(ownerChatId);
             } else {
               const channelChatId = -1001880050276;
-              bot.sendMessage(channelChatId, "You liked cumpilation");
+              picsToSend[0]["caption"] = "@ACUMPOT";
+              bot.sendMediaGroup(channelChatId, picsToSend.slice(0, 10));
             }
           });
         }
